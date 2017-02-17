@@ -4143,18 +4143,18 @@ final class HeadsetStateMachine extends StateMachine {
         return mAdapter.getRemoteDevice(Utils.getAddressStringFromByte(address));
     }
 
-    private boolean isInCall() {
-        if (DBG) Log.d(TAG, "isInCall()");
+    boolean isInCall() {
+        Log.d(TAG, "isInCall()");
         return ((mPhoneState.getNumActiveCall() > 0) || (mPhoneState.getNumHeldCall() > 0) ||
-                ((mPhoneState.getCallState() != HeadsetHalConstants.CALL_STATE_IDLE) &&
-                 (mPhoneState.getCallState() != HeadsetHalConstants.CALL_STATE_INCOMING)));
+                ((mPhoneState.getCallState() != HeadsetHalConstants.CALL_STATE_IDLE)));
     }
 
     // Accept incoming SCO only when there is active call, VR activated,
     // active VOIP call
     private boolean isScoAcceptable() {
-        if (DBG) Log.d(TAG, "isScoAcceptable()");
-        return mAudioRouteAllowed && (mVoiceRecognitionStarted || isInCall());
+        Log.d(TAG, "isScoAcceptable()");
+        return mAudioRouteAllowed && (mVoiceRecognitionStarted || (isInCall() &&
+                (mPhoneState.getCallState() != HeadsetHalConstants.CALL_STATE_INCOMING)));
     }
 
     boolean isConnected() {
