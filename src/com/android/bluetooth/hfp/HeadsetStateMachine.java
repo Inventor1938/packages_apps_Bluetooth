@@ -3954,6 +3954,41 @@ final class HeadsetStateMachine extends StateMachine {
         Log.d(TAG, "Exit processCpbr()");
     }
 
+    private void processCpbr(Intent intent)
+    {
+        int atCommandResult = 0;
+        int atCommandErrorCode = 0;
+        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+        Log.d(TAG, "Enter processCpbr()");
+        // ASSERT: (headset != null) && headSet.isConnected()
+        // REASON: mCheckingAccessPermission is true, otherwise resetAtState
+        // has set mCheckingAccessPermission to false
+        if (intent.getAction().equals(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY)) {
+            if (intent.getIntExtra(BluetoothDevice.EXTRA_CONNECTION_ACCESS_RESULT,
+                                   BluetoothDevice.CONNECTION_ACCESS_NO)
+                    == BluetoothDevice.CONNECTION_ACCESS_YES) {
+                if (intent.getBooleanExtra(BluetoothDevice.EXTRA_ALWAYS_ALLOWED, false)) {
+                    mCurrentDevice.setPhonebookAccessPermission(BluetoothDevice.ACCESS_ALLOWED);
+                }
+                atCommandResult = mPhonebook.processCpbrCommand(device);
+            } else {
+                if (intent.getBooleanExtra(BluetoothDevice.EXTRA_ALWAYS_ALLOWED, false)) {
+                    mCurrentDevice.setPhonebookAccessPermission(
+                            BluetoothDevice.ACCESS_REJECTED);
+                }
+            }
+        }
+        mPhonebook.setCpbrIndex(-1);
+        mPhonebook.setCheckingAccessPermission(false);
+
+        if (atCommandResult >= 0) {
+            atResponseCodeNative(atCommandResult, atCommandErrorCode, getByteAddress(device));
+        } else {
+            log("processCpbr - RESULT_NONE");
+        }
+        Log.d(TAG, "Exit processCpbr()");
+    }
+
     private void onConnectionStateChanged(int state, byte[] address) {
         if (DBG) Log.d(TAG, "Enter onConnectionStateChanged()");
         StackEvent event = new StackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
